@@ -13,10 +13,11 @@ __pycache__/
 *.py[cod]
 
 # Generated audio/transcription outputs
+audios/
+transcription/
 *.wav
-transcription.json
-transcription_history.json
-conversation_history.json
+response_*.wav
+input.wav
 
 # OS/editor
 .DS_Store

@@ -3,6 +3,7 @@ import json
 from groq import Groq
 from dotenv import load_dotenv
 from datetime import datetime
+from tts import answer_to_speech
 
 load_dotenv()
 
@@ -13,10 +14,10 @@ if not API_KEY:
 
 client = Groq(api_key=API_KEY)
 MODEL_NAME = "llama-3.3-70b-versatile"
-CONVERSATION_HISTORY_FILE = "conversation_history.json"
+CONVERSATION_HISTORY_FILE = "transcription/conversation_history.json"
 
 
-def get_all_transcriptions(json_file="transcription_history.json"):
+def get_all_transcriptions(json_file="transcription/transcription_history.json"):
     """Get all transcriptions from history"""
     try:
         with open(json_file, "r", encoding="utf-8") as f:
@@ -94,7 +95,7 @@ Context:
             }
         ],
         temperature=0.3,
-        max_tokens=256,
+        max_tokens=128,
     )
 
     return response.choices[0].message.content.strip()
@@ -115,7 +116,7 @@ def save_conversation_entry(question, answer):
         json.dump(conv_history, f, ensure_ascii=False, indent=2)
 
 
-def get_answer(transcription_history_json="transcription_history.json",
+def get_answer(transcription_history_json="transcription/transcription_history.json",
                context_file="data/data.txt"):
     """Process all transcriptions in history with context and conversation memory"""
     all_transcriptions = get_all_transcriptions(transcription_history_json)
@@ -148,6 +149,9 @@ def get_answer(transcription_history_json="transcription_history.json",
         answer = send_to_groq(question, base_context, conv_history)
         save_conversation_entry(question, answer)
         
+        # Convert answer to speech
+        audio_file = answer_to_speech(answer, auto_play=True)
+        
         # Add to local conversation history for next iteration
         conv_history.append({
             "question": question,
@@ -156,7 +160,8 @@ def get_answer(transcription_history_json="transcription_history.json",
         
         results.append({
             "question": question,
-            "answer": answer
+            "answer": answer,
+            "audio_file": audio_file
         })
         
         print(f"\nAnswer: {answer}\n")

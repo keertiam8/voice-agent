@@ -56,11 +56,11 @@ out = {
 }
 
 # Save current transcription (for llm.py to use)
-with open("transcription.json", "w", encoding="utf-8") as f:
+with open("transcription/transcription.json", "w", encoding="utf-8") as f:
 	json.dump(out, f, ensure_ascii=False, indent=2)
 
 # Append to history (keep all transcriptions)
-history_file = "transcription_history.json"
+history_file = "transcription/transcription_history.json"
 history = []
 if os.path.exists(history_file):
 	try:
@@ -74,4 +74,4 @@ history.append(out)
 with open(history_file, "w", encoding="utf-8") as f:
 	json.dump(history, f, ensure_ascii=False, indent=2)
 
-print(f"Saved to transcription.json and transcription_history.json (total: {len(history)} transcriptions)")
+print(f"Saved to transcription/ folder (total: {len(history)} transcriptions)")
