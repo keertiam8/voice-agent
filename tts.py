@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import threading
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -13,7 +14,7 @@ if not API_KEY:
 
 
 def text_to_speech(text, output_file=None, voice="aura-asteria-en"):
-    """Convert text to speech using Deepgram streaming TTS API (faster)
+    """Convert text to speech using Deepgram streaming TTS API
     
     Args:
         text: The text to convert to speech
@@ -61,7 +62,7 @@ def text_to_speech(text, output_file=None, voice="aura-asteria-en"):
                     if chunk_count % 10 == 0:
                         print(f"  Streamed {chunk_count * 4096} bytes...")
         
-        print(f"Audio streamed to: {output_file}")
+        print(f"Audio complete: {output_file}")
         return output_file
     
     except requests.exceptions.RequestException as e:
