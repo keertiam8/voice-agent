@@ -1,0 +1,23 @@
+# Environment secrets
+.env
+.env.*
+
+# Python virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Generated audio/transcription outputs
+*.wav
+transcription.json
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
