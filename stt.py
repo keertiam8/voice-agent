@@ -23,8 +23,6 @@ if not api_key:
 
 
 class Recorder:
-	"""Start/stop audio recording and save to WAV file"""
-	
 	def __init__(self, filename="recording.wav"):
 		self.filename = filename
 		self.stream = None
@@ -32,7 +30,6 @@ class Recorder:
 		self.is_recording = False
 	
 	def start(self):
-		"""Start recording audio"""
 		if self.is_recording:
 			return
 		
@@ -49,7 +46,6 @@ class Recorder:
 		self.stream.start()
 	
 	def stop(self):
-		"""Stop recording and save to file"""
 		if not self.is_recording:
 			return
 		
@@ -66,7 +62,6 @@ class Recorder:
 
 
 def transcribe_audio(wav_file):
-	"""Transcribe WAV file using Deepgram"""
 	if not os.path.exists(wav_file):
 		print(f"Error: {wav_file} not found")
 		return ""
@@ -74,7 +69,6 @@ def transcribe_audio(wav_file):
 	with open(wav_file, "rb") as audio_file:
 		audio_bytes = audio_file.read()
 	
-	# Send to Deepgram
 	url = "https://api.deepgram.com/v1/listen?language=en-US"
 	headers = {
 		"Authorization": f"Token {api_key}",
@@ -98,15 +92,12 @@ def transcribe_audio(wav_file):
 		"raw": result
 	}
 	
-	# Ensure folder exists
 	if not os.path.exists("transcription"):
 		os.makedirs("transcription")
 	
-	# Save current transcription (for llm.py to use)
 	with open("transcription/transcription.json", "w", encoding="utf-8") as f:
 		json.dump(out, f, ensure_ascii=False, indent=2)
 	
-	# Append to history (keep all transcriptions)
 	history_file = "transcription/transcription_history.json"
 	history = []
 	if os.path.exists(history_file):
@@ -126,7 +117,6 @@ def transcribe_audio(wav_file):
 
 
 if __name__ == "__main__":
-	# Example usage
 	print("Speak now...")
 	recorder = Recorder("input.wav")
 	recorder.start()

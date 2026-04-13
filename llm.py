@@ -47,7 +47,7 @@ def load_conversation_history():
         try:
             with open(CONVERSATION_HISTORY_FILE, "r", encoding="utf-8") as f:
                 content = f.read().strip()
-                if not content:  # File is empty
+                if not content:
                     return []
                 return json.loads(content)
         except:
@@ -73,7 +73,6 @@ def send_to_groq(question, base_context, conversation_history):
         print("No question provided")
         return ""
 
-    # Build system message with base context + conversation history
     prev_conv = build_context_from_history(conversation_history)
     system_msg = f"""You are a fintech assistant for Razorpay.
 Answer ONLY using the context below.
@@ -106,7 +105,6 @@ Context:
 
 def save_conversation_entry(question, answer):
     """Save Q&A pair to conversation history"""
-    # Ensure directory exists
     os.makedirs(os.path.dirname(CONVERSATION_HISTORY_FILE), exist_ok=True)
     
     entry = {
@@ -136,8 +134,7 @@ def get_answer(transcription_history_json="transcription/transcription_history.j
     if not base_context:
         print("Warning: No context loaded; using transcriptions alone")
 
-    # Get the latest transcription that hasn't been answered yet
-    # (compare with conversation history to avoid duplicate answers)
+
     answered_questions = {entry.get("question") for entry in conv_history}
     
     results = []
@@ -147,7 +144,6 @@ def get_answer(transcription_history_json="transcription/transcription_history.j
         if not question:
             continue
         
-        # Skip if already answered
         if question in answered_questions:
             print(f"Skipping already-answered question: {question}")
             continue
@@ -155,10 +151,8 @@ def get_answer(transcription_history_json="transcription/transcription_history.j
         answer = send_to_groq(question, base_context, conv_history)
         save_conversation_entry(question, answer)
         
-        # Convert answer to speech
         audio_file = answer_to_speech(answer, auto_play=True)
         
-        # Add to local conversation history for next iteration
         conv_history.append({
             "question": question,
             "answer": answer
