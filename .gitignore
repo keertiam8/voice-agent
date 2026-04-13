@@ -15,6 +15,8 @@ __pycache__/
 # Generated audio/transcription outputs
 *.wav
 transcription.json
+transcription_history.json
+conversation_history.json
 
 # OS/editor
 .DS_Store

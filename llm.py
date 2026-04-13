@@ -2,6 +2,7 @@ import os
 import json
 from groq import Groq
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()
 
@@ -12,24 +13,25 @@ if not API_KEY:
 
 client = Groq(api_key=API_KEY)
 MODEL_NAME = "llama-3.3-70b-versatile"
+CONVERSATION_HISTORY_FILE = "conversation_history.json"
 
 
-def load_transcription_text(json_file="transcription.json"):
-    """Extract text from transcription.json"""
+def get_all_transcriptions(json_file="transcription_history.json"):
+    """Get all transcriptions from history"""
     try:
         with open(json_file, "r", encoding="utf-8") as f:
             data = json.load(f)
-        return data.get("text", "")
+        return data if isinstance(data, list) else []
     except FileNotFoundError:
         print(f"Error: {json_file} not found")
-        return ""
+        return []
     except json.JSONDecodeError:
         print(f"Error: {json_file} is not valid JSON")
-        return ""
+        return []
 
 
-def load_prompt(txt_file="data.txt"):
-    """Load initial prompt from data.txt"""
+def load_context(txt_file="data/data.txt"):
+    """Load context/prompt from data/data.txt"""
     try:
         with open(txt_file, "r", encoding="utf-8") as f:
             return f.read()
@@ -38,56 +40,129 @@ def load_prompt(txt_file="data.txt"):
         return ""
 
 
-def send_to_groq(transcription_text, initial_prompt):
-    """Send transcription with controlled prompt to Groq"""
+def load_conversation_history():
+    """Load previous conversation history for context"""
+    if os.path.exists(CONVERSATION_HISTORY_FILE):
+        try:
+            with open(CONVERSATION_HISTORY_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            return []
+    return []
 
-    if not transcription_text:
-        print("No transcription text provided")
+
+def build_context_from_history(conv_history):
+    """Build context string from previous conversation"""
+    if not conv_history:
+        return ""
+    context_str = "Previous conversation history:\n\n"
+    for entry in conv_history:
+        context_str += f"Q: {entry.get('question', '')}\n"
+        context_str += f"A: {entry.get('answer', '')}\n\n"
+    return context_str
+
+
+def send_to_groq(question, base_context, conversation_history):
+    """Send question to Groq with context and conversation history"""
+
+    if not question:
+        print("No question provided")
         return ""
 
-    print("Sending to Groq...")
+    # Build system message with base context + conversation history
+    prev_conv = build_context_from_history(conversation_history)
+    system_msg = f"""You are a fintech assistant for Razorpay.
+Answer ONLY using the context below.
+If the answer is not present, say: "I don't know."
+
+Context:
+{base_context}
+
+{prev_conv}"""
+
+    print(f"Sending to Groq: {question}")
     response = client.chat.completions.create(
         model=MODEL_NAME,
         messages=[
             {
                 "role": "system",
-                "content": f"""You are a fintech assistant for Razorpay.
-Answer ONLY using the context below.
-If the answer is not present, say: "I don't know."
-
-Context:
-{initial_prompt}"""
+                "content": system_msg
             },
             {
                 "role": "user",
-                "content": transcription_text
+                "content": question
             }
         ],
         temperature=0.3,
-        max_tokens=1024,
+        max_tokens=256,
     )
 
     return response.choices[0].message.content.strip()
 
 
-def process_audio_with_groq(transcription_json="transcription.json",
-                             prompt_file="data/data.txt"):
-    """Load files and process with Groq"""
-    transcription = load_transcription_text(transcription_json)
-    initial_prompt = load_prompt(prompt_file)
+def save_conversation_entry(question, answer):
+    """Save Q&A pair to conversation history"""
+    entry = {
+        "timestamp": datetime.now().isoformat(),
+        "question": question,
+        "answer": answer
+    }
+    
+    conv_history = load_conversation_history()
+    conv_history.append(entry)
+    
+    with open(CONVERSATION_HISTORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(conv_history, f, ensure_ascii=False, indent=2)
 
-    if not transcription:
-        print("No transcription available")
-        return ""
 
-    if not initial_prompt:
-        print("Warning: No initial prompt loaded; using transcription alone")
+def get_answer(transcription_history_json="transcription_history.json",
+               context_file="data/data.txt"):
+    """Process all transcriptions in history with context and conversation memory"""
+    all_transcriptions = get_all_transcriptions(transcription_history_json)
+    base_context = load_context(context_file)
+    conv_history = load_conversation_history()
 
-    result = send_to_groq(transcription, initial_prompt)
-    print("\nGroq Response:")
-    print(result)
-    return result
+    if not all_transcriptions:
+        print("No transcriptions available")
+        return []
+
+    if not base_context:
+        print("Warning: No context loaded; using transcriptions alone")
+
+    # Get the latest transcription that hasn't been answered yet
+    # (compare with conversation history to avoid duplicate answers)
+    answered_questions = {entry.get("question") for entry in conv_history}
+    
+    results = []
+    for trans_entry in all_transcriptions:
+        question = trans_entry.get("text", "")
+        
+        if not question:
+            continue
+        
+        # Skip if already answered
+        if question in answered_questions:
+            print(f"Skipping already-answered question: {question}")
+            continue
+        
+        answer = send_to_groq(question, base_context, conv_history)
+        save_conversation_entry(question, answer)
+        
+        # Add to local conversation history for next iteration
+        conv_history.append({
+            "question": question,
+            "answer": answer
+        })
+        
+        results.append({
+            "question": question,
+            "answer": answer
+        })
+        
+        print(f"\nAnswer: {answer}\n")
+    
+    return results
 
 
 if __name__ == "__main__":
-    response = process_audio_with_groq()
+    response = get_answer()

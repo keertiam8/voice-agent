@@ -4,11 +4,16 @@ import requests
 import sounddevice as sd
 from scipy.io.wavfile import write
 import numpy as np
+from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 # Recording settings
 fs = 44100
 device = None
-seconds = 120
+seconds = 10
 
 api_key = os.getenv("DEEPGRAM_API_KEY")
 if not api_key:
@@ -35,7 +40,6 @@ headers = {
 resp = requests.post(url, headers=headers, data=audio_bytes)
 resp.raise_for_status()
 result = resp.json()
-
 transcript = ""
 try:
 	transcript = result["results"]["channels"][0]["alternatives"][0]["transcript"]
@@ -47,7 +51,27 @@ print("You said:", transcript)
 out = {
 	"text": transcript,
 	"language": "en",
+	"timestamp": datetime.now().isoformat(),
 	"raw": result
 }
+
+# Save current transcription (for llm.py to use)
 with open("transcription.json", "w", encoding="utf-8") as f:
 	json.dump(out, f, ensure_ascii=False, indent=2)
+
+# Append to history (keep all transcriptions)
+history_file = "transcription_history.json"
+history = []
+if os.path.exists(history_file):
+	try:
+		with open(history_file, "r", encoding="utf-8") as f:
+			history = json.load(f)
+	except:
+		history = []
+
+history.append(out)
+
+with open(history_file, "w", encoding="utf-8") as f:
+	json.dump(history, f, ensure_ascii=False, indent=2)
+
+print(f"Saved to transcription.json and transcription_history.json (total: {len(history)} transcriptions)")
