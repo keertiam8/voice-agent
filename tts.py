@@ -104,8 +104,8 @@ def answer_to_speech(answer_text, auto_play=True):
     """
     audio_file = text_to_speech(answer_text)
     
-    if audio_file and auto_play:
-        play_audio(audio_file)
+    # Note: auto_play is now handled by Streamlit st.audio() widget
+    # winsound doesn't work well in Streamlit context
     
     return audio_file
 

@@ -46,7 +46,10 @@ def load_conversation_history():
     if os.path.exists(CONVERSATION_HISTORY_FILE):
         try:
             with open(CONVERSATION_HISTORY_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+                content = f.read().strip()
+                if not content:  # File is empty
+                    return []
+                return json.loads(content)
         except:
             return []
     return []
@@ -103,6 +106,9 @@ Context:
 
 def save_conversation_entry(question, answer):
     """Save Q&A pair to conversation history"""
+    # Ensure directory exists
+    os.makedirs(os.path.dirname(CONVERSATION_HISTORY_FILE), exist_ok=True)
+    
     entry = {
         "timestamp": datetime.now().isoformat(),
         "question": question,
