@@ -7,7 +7,6 @@ from scipy.io.wavfile import write
 import threading
 import time
 
-# Import local modules
 from stt import Recorder, transcribe_audio
 from llm import get_answer
 from tts import answer_to_speech
@@ -15,7 +14,6 @@ from tts import answer_to_speech
 st.set_page_config(page_title="Voice Agent", layout="wide")
 st.title("AI Voice Agent - Ask Razorpay Questions")
 
-# Initialize session state
 if "recording" not in st.session_state:
     st.session_state.recording = False
 if "recorder" not in st.session_state:
@@ -31,13 +29,11 @@ if "response_audio" not in st.session_state:
 if "last_recording_time" not in st.session_state:
     st.session_state.last_recording_time = 0
 
-# Create columns
 col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("1. Record Your Question")
     
-    # Record button
     record_clicked = st.button("Start Recording" if not st.session_state.recording else "Stop Recording", 
                                key="record_btn", use_container_width=True)
     
@@ -53,14 +49,12 @@ with col1:
             st.write("Recording, click to stop")
             st.rerun()
         else:
-            # Stop recording
             st.session_state.recorder.stop()
             st.session_state.recording = False
             st.session_state.last_recording_time = datetime.now().timestamp()
             st.write("Recording saved")
             st.rerun()
     
-    # Show recording status
     if st.session_state.recording:
         st.warning("Recording Audio")
     
@@ -72,7 +66,7 @@ with col1:
 with col2:
     st.subheader("2. Answer from AI")
     
-    if st.session_state.audio_file and os.path.exists(st.session_state.audio_file) and st.session_state.transcript is None:
+    if st.session_state.audio_file and os.path.exists(st.session_state.audio_file) and not st.session_state.recording and st.session_state.transcript is None:
         with st.spinner("Transcribing..."):
             transcript = transcribe_audio(st.session_state.audio_file)
             st.session_state.transcript = transcript
@@ -96,11 +90,10 @@ with col2:
             st.error("Failed to transcribe audio")
     elif st.session_state.response_audio and os.path.exists(st.session_state.response_audio):
         with open(st.session_state.response_audio, "rb") as audio:
-            st.audio(audio.read(), format="audio/wav", autoplay=True)
+            st.audio(audio.read(), format="audio/wav", autoplay=False)
     else:
         st.info("Record a question first")
 
-# Sidebar - Show history
 st.sidebar.title("Conversation History")
 
 try:
@@ -124,6 +117,6 @@ except json.JSONDecodeError:
 except Exception as e:
     st.sidebar.error(f"Error reading history: {str(e)}")
 
-# Footer
+
 st.divider()
 st.caption("AI Voice Assistant")

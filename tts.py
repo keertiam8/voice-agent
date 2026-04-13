@@ -27,17 +27,14 @@ def text_to_speech(text, output_file=None, voice="aura-asteria-en"):
         print("No text provided for TTS")
         return None
     
-    # Create audios folder if it doesn't exist
     audios_dir = "audios"
     if not os.path.exists(audios_dir):
         os.makedirs(audios_dir)
     
-    # Generate output filename with timestamp if not provided
     if not output_file:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_file = os.path.join(audios_dir, f"response_{timestamp}.wav")
     
-    # Deepgram TTS streaming endpoint
     url = f"https://api.deepgram.com/v1/speak?model={voice}&encoding=linear16"
     
     headers = {
@@ -52,11 +49,9 @@ def text_to_speech(text, output_file=None, voice="aura-asteria-en"):
     print(f"Streaming speech: {text[:100]}...")
     
     try:
-        # Use streaming to get audio chunks faster
         response = requests.post(url, headers=headers, json=payload, stream=True)
         response.raise_for_status()
         
-        # Write audio chunks to file as they arrive (faster than waiting for full response)
         chunk_count = 0
         with open(output_file, "wb") as f:
             for chunk in response.iter_content(chunk_size=4096):
@@ -85,14 +80,13 @@ def play_audio(audio_file):
     
     try:
         if platform.system() == "Windows":
-            # Use winsound for direct audio playback on Windows
             import winsound
             winsound.PlaySound(audio_file, winsound.SND_FILENAME)
             print(f"Playing: {audio_file}")
         elif platform.system() == "Darwin":  # macOS
             subprocess.run(["afplay", audio_file])
             print(f"Playing: {audio_file}")
-        else:  # Linux
+        else: 
             subprocess.run(["ffplay", "-nodisp", "-autoexit", audio_file])
             print(f"Playing: {audio_file}")
     except Exception as e:
@@ -111,8 +105,6 @@ def answer_to_speech(answer_text, auto_play=True):
     """
     audio_file = text_to_speech(answer_text)
     
-    # Note: auto_play is now handled by Streamlit st.audio() widget
-    # winsound doesn't work well in Streamlit context
     
     return audio_file
 

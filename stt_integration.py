@@ -13,7 +13,6 @@ if not API_KEY:
 
 
 def transcribe_file(wav_file):
-    """Transcribe wav file using Deepgram STT"""
     if not os.path.exists(wav_file):
         print(f"Error: {wav_file} not found")
         return ""
@@ -38,7 +37,6 @@ def transcribe_file(wav_file):
         except Exception:
             transcript = result.get("results", "")
         
-        # Save to transcription.json for llm.py to use
         if not os.path.exists("transcription"):
             os.makedirs("transcription")
         
@@ -52,7 +50,6 @@ def transcribe_file(wav_file):
         with open("transcription/transcription.json", "w", encoding="utf-8") as f:
             json.dump(out, f, ensure_ascii=False, indent=2)
         
-        # Append to history
         history_file = "transcription/transcription_history.json"
         history = []
         if os.path.exists(history_file):

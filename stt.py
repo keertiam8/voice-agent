@@ -10,7 +10,6 @@ import threading
 
 load_dotenv()
 
-# Recording settings
 fs = 44100
 device = None
 

@@ -74,11 +74,11 @@ def send_to_groq(question, base_context, conversation_history):
         return ""
 
     prev_conv = build_context_from_history(conversation_history)
-    system_msg = f"""You are a fintech assistant for Razorpay.
-Answer ONLY using the context below.
-If the answer is not present, say: "I don't know."
+    system_msg = f"""You are a knowledgeable fintech assistant for Razorpay. Answer questions about Razorpay based on the context provided below. If you don't find the specific answer in the context, you can use your general knowledge about Razorpay to help.
 
-Context:
+IMPORTANT: Do NOT use asterisks, bold, italics, or markdown formatting in your responses. Write plain text only. This response will be converted to audio, so asterisks will be read aloud as "star".
+
+Context about Razorpay:
 {base_context}
 
 {prev_conv}"""
@@ -97,7 +97,7 @@ Context:
             }
         ],
         temperature=0.3,
-        max_tokens=128,
+        max_tokens=64,
     )
 
     return response.choices[0].message.content.strip()
