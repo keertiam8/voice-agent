@@ -13,7 +13,7 @@ if not API_KEY:
 
 
 def text_to_speech(text, output_file=None, voice="aura-asteria-en"):
-    """Convert text to speech using Deepgram TTS API
+    """Convert text to speech using Deepgram streaming TTS API (faster)
     
     Args:
         text: The text to convert to speech
@@ -37,7 +37,7 @@ def text_to_speech(text, output_file=None, voice="aura-asteria-en"):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_file = os.path.join(audios_dir, f"response_{timestamp}.wav")
     
-    # Deepgram TTS endpoint
+    # Deepgram TTS streaming endpoint
     url = f"https://api.deepgram.com/v1/speak?model={voice}&encoding=linear16"
     
     headers = {
@@ -49,21 +49,28 @@ def text_to_speech(text, output_file=None, voice="aura-asteria-en"):
         "text": text
     }
     
-    print(f"Converting to speech: {text[:100]}...")
+    print(f"Streaming speech: {text[:100]}...")
     
     try:
-        response = requests.post(url, headers=headers, json=payload)
+        # Use streaming to get audio chunks faster
+        response = requests.post(url, headers=headers, json=payload, stream=True)
         response.raise_for_status()
         
-        # Save audio to file
+        # Write audio chunks to file as they arrive (faster than waiting for full response)
+        chunk_count = 0
         with open(output_file, "wb") as f:
-            f.write(response.content)
+            for chunk in response.iter_content(chunk_size=4096):
+                if chunk:
+                    f.write(chunk)
+                    chunk_count += 1
+                    if chunk_count % 10 == 0:
+                        print(f"  Streamed {chunk_count * 4096} bytes...")
         
-        print(f"Audio saved to: {output_file}")
+        print(f"Audio streamed to: {output_file}")
         return output_file
     
     except requests.exceptions.RequestException as e:
-        print(f"Error converting text to speech: {e}")
+        print(f"Error streaming text to speech: {e}")
         return None
 
 
